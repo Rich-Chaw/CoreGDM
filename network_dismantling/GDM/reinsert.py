@@ -100,10 +100,8 @@ def reinsert(
     output = np.zeros(network.num_vertices(),
                       dtype=int,
                       )
-    with (
-        NamedTemporaryFile("w+") as broken_fd,
-        NamedTemporaryFile("w+") as output_fd,
-    ):
+    with NamedTemporaryFile("w+") as broken_fd, \
+        NamedTemporaryFile("w+") as output_fd:
 
         broken_path = broken_fd.name
         output_path = output_fd.name

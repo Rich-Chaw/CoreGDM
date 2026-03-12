@@ -315,13 +315,32 @@ def main(args, logger=logging.getLogger("dummy")):
                     for heuristic in tqdm_heuristics:
                         dismantling_method: DismantlingMethod = dismantling_methods[heuristic]
 
+                        # Custom output path: out/{heuristic}/{network}.csv
+                        out_dir = args.output / heuristic
+                        out_dir.mkdir(parents=True, exist_ok=True)
+                        out_file = out_dir / f"{network_name}.csv"
+
+                        # Check if this run already exists in the per-method/per-graph file
+                        skip_run = False
+                        if out_file.exists():
+                            try:
+                                df_existing = pd.read_csv(out_file)
+                                # Check if a row with the same threshold exists
+                                if not df_existing[df_existing["threshold"] == args.threshold].empty:
+                                    skip_run = True
+                            except Exception as e:
+                                logger.warning(f"Could not read {out_file}: {e}")
+                        if skip_run:
+                            logger.info(f"Skipping {heuristic} on {network_name} (threshold: {args.threshold}) -- already exists.")
+                            continue
+
                         logger.info(
                             f"Running heuristic {dismantling_method.short_name} with threshold {args.threshold}")
                         df_filtered = network_df[network_df["heuristic"] == dismantling_method.key]
 
                         # TODO also check if all the requested metrics are present?
                         if len(df_filtered) != 0:
-                            # Nothing to do. The network was already tested
+                            # Nothing to do. The network was already tested in the central file
                             continue
 
                         if networks_provider is None:
@@ -344,12 +363,11 @@ def main(args, logger=logging.getLogger("dummy")):
                                 logger.error(f"More than one network found for {network_name}!")
                                 continue
 
-                            network_name, network = networks_provider[0]
+                            network_name_loaded, network = networks_provider[0]
 
-                            if network_name != network_name:
+                            if network_name_loaded != network_name:
                                 logger.error(
-                                    f"Loaded network with filename {network_name} does not match the expected filename {network_name}!"
-                                )
+                                    f"Loaded network with filename {network_name_loaded} does not match the expected filename {network_name}!")
                                 continue
 
                             network_size = network.num_vertices()
@@ -374,15 +392,13 @@ def main(args, logger=logging.getLogger("dummy")):
                             if len(df_dependency_filtered) == 0:
                                 logger.error(
                                     f"Dependency {dismantling_method.depends_on.short_name} not found "
-                                    f"for heuristic {dismantling_method.short_name}"
-                                )
+                                    f"for heuristic {dismantling_method.short_name}")
                                 continue
 
                             if len(df_dependency_filtered) > 1:
                                 logger.error(
                                     f"More than one dependency {dismantling_method.depends_on.short_name} "
-                                    f"found for heuristic {dismantling_method.short_name}"
-                                )
+                                    f"found for heuristic {dismantling_method.short_name}")
                                 continue
 
                             # Get the removals from the dependency
@@ -416,25 +432,19 @@ def main(args, logger=logging.getLogger("dummy")):
                                 if (df_dependency_row.shape[0] != 1):
                                     logger.error(
                                         f"Dependency {dismantling_method.depends_on.short_name} not found "
-                                        f"for heuristic {dismantling_method.short_name}"
-                                    )
+                                        f"for heuristic {dismantling_method.short_name}")
                                     continue
 
                                 dependency_run = df_dependency_row.iloc[0]
 
                                 dependency_removals = dependency_run.pop("removals")
 
-                                # logger.debug(f"Dependency run: {dependency_run}")
-                                # logger.debug(f"Dependency df_dependency_filtered: {df_dependency_filtered}")
-                                # logger.debug(f"Dependency removals: {dependency_removals}")
-
                                 if not df_dependency_filtered.equals(dependency_run):
                                     logger.error(
                                         f"Dependency {dismantling_method.depends_on.short_name} mismatch "
                                         f"for heuristic {dismantling_method.short_name}:\n"
                                         f"Original:\n{df_dependency_filtered}\n"
-                                        f"Read:\n{dependency_run}"
-                                    )
+                                        f"Read:\n{dependency_run}")
                                     continue
 
                                 logger.debug(f"Dependency {dismantling_method.depends_on.display_name} "
@@ -446,8 +456,7 @@ def main(args, logger=logging.getLogger("dummy")):
                             if dependency_removals is None:
                                 logger.error(
                                     f"Dependency {dismantling_method.depends_on.short_name} not found "
-                                    f"for heuristic {dismantling_method.short_name}"
-                                )
+                                    f"for heuristic {dismantling_method.short_name}")
                                 continue
 
                             try:
@@ -470,7 +479,7 @@ def main(args, logger=logging.getLogger("dummy")):
                             generator_args[dismantling_method.depends_on.key] = dependency_removals
 
                         logger.debug(
-                            f"Dismantling {network_name} according to {display_name}. "
+                            f"Dismantling {network_name} according to {dismantling_method.short_name}. "
                             f"Aiming to LCC size {stop_condition} ({stop_condition / network_size:.3f})"
                         )
                         # logger.debug(f"dismantling_method_kwargs: {dismantling_method_kwargs}")
@@ -524,7 +533,9 @@ def main(args, logger=logging.getLogger("dummy")):
                             network_df = pd.concat([network_df, runs_dataframe],
                                                    ignore_index=True,
                                                    )
-                            df_queue.put(runs_dataframe)
+                            # Save to the per-method/per-graph file
+                            write_header = not out_file.exists()
+                            runs_dataframe.to_csv(out_file, mode="a", index=False, header=write_header)
 
                         except Exception as e:
                             logger.exception(
@@ -597,7 +608,7 @@ if __name__ == "__main__":
         type=Path,
         default=None,
         required=True,
-        help="Heuristics output file. Will be used to store the results of the runs.",
+        help="Heuristics output dir. Will be used to store the results of the runs.",
     )
 
     parser.add_argument(

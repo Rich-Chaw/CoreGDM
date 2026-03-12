@@ -28,26 +28,12 @@ def _decycler(network: Graph,
 
     nodes = []
 
-    with (
-        NamedTemporaryFile("w+",
-                           # delete=False,
-                           ) as network_fd,
-        NamedTemporaryFile("w+",
-                           # delete=False,
-                           ) as seeds_fd,
-        NamedTemporaryFile("w+",
-                           # delete=False,
-                           ) as broken_fd,
-        NamedTemporaryFile("w+",
-                           # delete=False,
-                           ) as output_fd,
-        LogPipe(logger=logger,
-                level=logging.INFO,
-                ) as stdout_pipe,
-        LogPipe(logger=logger,
-                level=logging.ERROR,
-                ) as stderr_pipe
-    ):
+    with NamedTemporaryFile("w+") as network_fd, \
+         NamedTemporaryFile("w+") as seeds_fd, \
+         NamedTemporaryFile("w+") as broken_fd, \
+         NamedTemporaryFile("w+") as output_fd, \
+         LogPipe(logger=logger, level=logging.INFO) as stdout_pipe, \
+         LogPipe(logger=logger, level=logging.ERROR) as stderr_pipe:
 
         network_path = network_fd.name
         seeds_path = seeds_fd.name

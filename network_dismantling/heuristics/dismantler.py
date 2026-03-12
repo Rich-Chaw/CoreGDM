@@ -163,60 +163,60 @@ def main(args):
                 position=1,
                 desc="Heuristics",
         ):
-            # for heuristic in progressbar(
-            #         # list(product_dict(_callback=sorter.parameters_combination_validator, **parameters_to_try)),
-            #         args.heuristics,
-            #         redirect_stdout=True
-            # ):
             display_name = ' '.join(heuristic.split("_")).upper()
 
-            # TODO improve me
-            filter = {
-                "heuristic": heuristic
-            }
-            # add_run_parameters(params, filter)
-            # sorter.add_run_parameters(filter)
-
-            df_filtered = network_df.loc[
-                (network_df[list(filter.keys())] == list(filter.values())).all(axis='columns'),
-                ["network", "static"]  # , "seed" ]
-            ]
-
-            generator_args = {
-                "sorting_function": sorters.__all_dict__[heuristic],
-                "logger": print,
-                "network_name": name,
-            }
-            # for name, network in tqdm(networks_provider,
-            #                           desc="Networks",
-            #                           position=1,
-            #                           ascii=True,
-            #                           ):
+            # Custom output path: out/{heuristic}/{network}.csv
+            out_dir = Path("out") / heuristic
+            out_dir.mkdir(parents=True, exist_ok=True)
+            out_file = out_dir / f"{name}.csv"
 
             runs = []
             for mode in static_modes:
-                filtered_network_df = df_filtered.loc[(df_filtered["static"] == mode)]
-
-                if len(filtered_network_df) != 0:
-                    # Nothing to do. Network was already tested
+                # Check if this run already exists in the per-method/per-graph file
+                skip_run = False
+                if out_file.exists():
+                    try:
+                        df_existing = pd.read_csv(out_file)
+                        # Check if a row with the same static/dynamic mode exists
+                        if not df_existing[df_existing["static"] == mode].empty:
+                            skip_run = True
+                    except Exception as e:
+                        print(f"Warning: Could not read {out_file}: {e}")
+                if skip_run:
+                    tqdm.write(f"Skipping {heuristic} on {name} (mode: {'STATIC' if mode else 'DYNAMIC'}) -- already exists.")
                     continue
 
+                # TODO improve me
+                filter = {
+                    "heuristic": heuristic
+                }
+                # add_run_parameters(params, filter)
+                # sorter.add_run_parameters(filter)
+
+                df_filtered = network_df.loc[
+                    (network_df[list(filter.keys())] == list(filter.values())).all(axis='columns'),
+                    ["network", "static"]  # , "seed" ]
+                ]
+
+                generator_args = {
+                    "sorting_function": sorters.__all_dict__[heuristic],
+                    "logger": print,
+                    "network_name": name,
+                }
+                # for name, network in tqdm(networks_provider,
+                #                           desc="Networks",
+                #                           position=1,
+                #                           ascii=True,
+                #                           ):
+
                 if mode:
-                    # External (fast) C++ dismantler.
-                    # WARNING: It won't work if you try to remove nodes that only have self loops in the original network.
                     generator = get_predictions
                     dismantler = external_threshold_dismantler
-
-                    # generator = static_generator
-                    # dismantler = threshold_dismantler
                 else:
-                    # TODO REMOVE THIS. IT'S ONLY FOR DEBUGGING
                     if "collective_influence" in heuristic:
                         generator = incremental_dynamic_generator
                     else:
                         generator = dynamic_generator
-
-                    # dismantler = external_iterative_threshold_dismantler
                     dismantler = threshold_dismantler
 
                 print("Dismantling {} according to {}. Aiming to LCC size {} ({})".format(name,
@@ -254,22 +254,18 @@ def main(args):
                                                                                                   removal[4]
                                                                                                   ))
 
-            runs_dataframe = pd.DataFrame(data=runs, columns=args.output_df_columns)
-
-            if args.output_file is not None:
-
+            if runs:
+                runs_dataframe = pd.DataFrame(data=runs, columns=args.output_df_columns)
                 kwargs = {
-                    "path_or_buf": Path(args.output_file),
+                    "path_or_buf": out_file,
                     "index": False,
                     # header='column_names',
                     "columns": args.output_df_columns
                 }
-
                 # If dataframe exists append without writing the header
-                if kwargs["path_or_buf"].exists():
+                if out_file.exists():
                     kwargs["mode"] = "a"
                     kwargs["header"] = False
-
                 runs_dataframe.to_csv(**kwargs)
 
 

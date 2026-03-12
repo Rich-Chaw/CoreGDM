@@ -293,12 +293,15 @@ The parameters are as follows:
 
 Example usage:
 
+'CollectiveInfluenceL1', 'CollectiveInfluenceL2', 'CollectiveInfluenceL3', 'CoreGDM', 'CoreHD', 'EGND', 'EI_s1', 'EI_s2', 'GDM', 'GDMR', 'GND', 'GNDR', 'MS', 'MSR', 'network_entanglement_large', 'network_entanglement_large_reinsertion', 'network_entanglement_mid', 'network_entanglement_mid_reinsertion', 'network_entanglement_small', 'network_entanglement_small_reinsertion', 'vertex_entanglement', 'vertex_entanglement_reinsertion', 'all'
+
+
 ```bash
 # Run the dismantler on all the networks in the dataset/test_review folder, using the GND, the MS and the CI l2 algorithms with threshold 0.1
 python network_dismantling/dismantler.py -l dataset/test_review/ -t 0.1 -H GND MS CollectiveInfluenceL2 -o out/df/heuristics.csv
 
 # As above, but only on the networks whose name contains the string "corruption"
-python network_dismantling/dismantler.py -l dataset/test_review/ -t 0.1 -H GND MS CollectiveInfluenceL2 -o out/df/heuristics.csv -F "*corruption*"
+python network_dismantling/dismantler.py -l dataset/test_review/ -t 0.1 -H GND CollectiveInfluenceL2 CoreGDM GDM CoreHD EI_s2   -o out/df/heuristics.csv -F "*corruption*"
 
 # As above, but also scans the dataset/test_review_lfr folder for networks (without filtering)
 python network_dismantling/dismantler.py -l dataset/test_review/ dataset/test_review_lfr/ -t 0.1 -H CoreHD GND -o out/df/heuristics.csv 
@@ -332,7 +335,7 @@ Example usage:
 
 ```bash
 # Plot the results of the dismantling algorithms store in the out/df/heuristics.csv file, uses the out/plot/ folder as root for the output plots
-python plot.py -f out/df/heuristics.csv -o out/plot/
+python network_dismantling/plot.py -f out/df/heuristics.csv -o out/plot/
 
 # Same as above, but shows only the first 5 dismantling curves (the best) according to the roc_auc score (sorted ascending)
 python plot.py -f out/df/heuristics.csv -o out/plot/ -sf 5 -s roc_auc -sa

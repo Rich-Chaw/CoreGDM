@@ -252,7 +252,7 @@ def display_df(df, args):
             else:
                 plt.xlim(right=max_num_removals * (1.05))
 
-                file = args.output / f"{network_name}.pdf"
+                file = args.output / f"{network_name}.png"
 
                 if not file.parent.exists():
                     file.parent.mkdir(parents=True)
@@ -261,7 +261,7 @@ def display_df(df, args):
 
                 # figLegend = pylab.figure()
                 #
-                # file = args.output / "legend.pdf"
+                # file = args.output / "legend.png"
                 # # produce a legend for the objects in the other figure
                 # pylab.figlegend(*ax.get_legend_handles_labels(),
                 #                 ncol=len(removals_list),

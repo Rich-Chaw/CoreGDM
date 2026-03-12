@@ -149,16 +149,15 @@ def GND(network: Graph,
     nodes = []
     output = np.zeros(network.num_vertices())
 
-    with (
-        NamedTemporaryFile("w+") as network_fd,
-        NamedTemporaryFile("r+") as broken_fd,
+    with NamedTemporaryFile("w+") as network_fd, \
+        NamedTemporaryFile("w+") as broken_fd, \
         LogPipe(logger=logger,
                 level=logging.INFO,
-                ) as stdout_pipe,
+                ) as stdout_pipe, \
         LogPipe(logger=logger,
                 level=logging.ERROR,
-                ) as stderr_pipe
-    ):
+                ) as stderr_pipe:
+                
         network_path = network_fd.name
         broken_path = broken_fd.name
 
@@ -240,17 +239,11 @@ def GNDR(network: Graph,
     output = np.zeros(network.num_vertices(),
                       dtype=int,
                       )
-    with (
-        NamedTemporaryFile("w+") as network_fd,
-        NamedTemporaryFile("w+") as broken_fd,
-        NamedTemporaryFile("r+") as output_fd,
-        LogPipe(logger=logger,
-                level=logging.INFO,
-                ) as stdout_pipe,
-        LogPipe(logger=logger,
-                level=logging.ERROR,
-                ) as stderr_pipe
-    ):
+    with NamedTemporaryFile("w+") as network_fd, \
+         NamedTemporaryFile("w+") as broken_fd, \
+         NamedTemporaryFile("r+") as output_fd, \
+         LogPipe(logger=logger, level=logging.INFO) as stdout_pipe, \
+         LogPipe(logger=logger, level=logging.ERROR) as stderr_pipe:
         network_path = network_fd.name
         broken_path = broken_fd.name
         output_path = output_fd.name

@@ -103,7 +103,7 @@ def entropy_diff_time(G: Graph,
                       p_threshold: float = p_threshold,
                       zero_threshold: float = zero_threshold,
                       logger: Logger = getLogger("dummy"),
-                      **kwargs) -> tuple[float, float]:
+                      **kwargs):
     Ls = get_sorted_eigvals(G)
     diff_time = get_first_non_zero_laplacian_eig(Ls,
                                                  zero_threshold=zero_threshold,

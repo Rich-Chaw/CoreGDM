@@ -5,8 +5,8 @@ from typing import Union, List
 
 from network_dismantling.common.loaders import load_graph
 
-
-def list_files(location, filter="*", extensions: Union[list, str] = ("graphml", "gt"), **kwargs):
+# Now supports .graphml, .gt, and .txt (edge list) files for network loading
+def list_files(location, filter="*", extensions: Union[list, str] = ("graphml", "gt", "txt","csv"), **kwargs):
     if not isinstance(filter, list):
         filter = [filter]
 
@@ -30,7 +30,7 @@ def list_files(location, filter="*", extensions: Union[list, str] = ("graphml", 
     return files
 
 
-def storage_provider(location, max_num_vertices=None, filter="*", extensions: Union[list, str] = ("graphml", "gt"),
+def storage_provider(location, max_num_vertices=None, filter="*", extensions: Union[list, str] = ("graphml", "gt", "txt"),
                      callback=None):
     if not location.is_absolute():
         location = location.resolve()
